@@ -1,0 +1,228 @@
+#define _CRT_SECURE_NO_WARNINGS
+
+#define pi 3.141592
+#define e 2.718281
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<conio.h>
+#include<string.h>
+#include<ctype.h>
+
+char mem_acces[1000] = {0};
+int currunt_mem;                    //for accesing the memory units
+bool is_selected = false;
+
+void save(float n);
+void show(void);
+void reset(void);
+double applyOperation(double, double, char);
+double evaluateExpression(const char*);
+void applications(void);
+
+int main() {
+    
+    int choice;
+    printf("Choose an option:\n1. Hints\n2. Calculator\n3. Show History\n4. Reset History\n5. Exit\n");
+    
+    while (1) {
+
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+        case 1:
+            printf("Hints are not implemented yet.\n");
+            break;
+        case 2:
+            applications();
+            break;
+        case 3:
+            show();
+            break;
+        case 4:
+            reset();
+            break;
+        case 5:
+            printf("Exiting...\n");
+            exit(1);
+            break;
+        default:
+            printf("Invalid number!\n");
+        }
+
+    }
+
+    return 0;
+}
+
+void save(float n) {
+   
+    FILE* fp;
+    fp = fopen("data_saver.txt", "a");
+    fprintf(fp, "%f\n", n);
+    fclose(fp);
+
+    for (int i = 1; i < 1000; i++) {
+        if (mem_acces[i] == '0') {
+            mem_acces[i] = n;
+            break;
+        }
+    }
+}
+
+void show(void) {
+   
+    FILE* fp;
+    float n;
+    fp = fopen("data_saver.txt", "r");
+    if (fp == NULL) {
+        printf("Nothing in history\n");
+        return;
+    }
+    while (fscanf(fp, "%f", &n) != EOF)
+        printf("%f\n", n);
+    fclose(fp);
+
+    printf(" Which line do you want to continue ? (Press '0' to exit to menu) \n");
+    scanf("%d", &currunt_mem);
+
+    if (currunt_mem != 0)
+        is_selected = true;
+
+    else return;
+}
+
+void reset(void) {
+   
+    FILE* fp;
+    fp = fopen("data_saver.txt", "w");
+    fclose(fp);
+    printf("The history has been cleared\n");
+
+    for (int i = 1; i < 1000; i++)
+        mem_acces[i] = { 0 };
+}
+
+double applyOperation(double a, double b, char op) {
+   
+    if (op == '+') return a + b;
+    if (op == '-') return a - b;
+    if (op == '*') return a * b;
+    if (op == '/') return b != 0 ? a / b : 0;             //if smt was a/0 --> a/0 = 0
+    return 0;
+}
+
+double evaluateExpression(const char* expression) {
+  
+    double numbers[100];
+    char operators[100];
+    int numIndex = 0, opIndex = 0;
+    int i = 0;
+
+    while (expression[i] != '\0') {
+        if (isspace(expression[i])) {
+            i++;
+            continue;
+        }
+
+        if (isdigit(expression[i]) || expression[i] == '.') {
+            double value = 0;
+            double fraction = 1;
+
+            while (isdigit(expression[i]) || expression[i] == '.') {
+                if (expression[i] == '.') {
+                    fraction = 0.1;
+                    i++;
+                    continue;
+                }
+                if (fraction == 1) {
+                    value = value * 10 + (expression[i] - '0');
+                }
+                else {
+                    value += (expression[i] - '0') * fraction;
+                    fraction *= 0.1;
+                }
+                i++;
+            }
+            numbers[numIndex++] = value;
+        }
+        else if (expression[i] == '+' ||  expression[i] == '-' || expression[i] == '*' || expression[i] == '/') {
+            operators[opIndex++] = expression[i];
+            i++;
+        }
+        else {
+            printf("Invalid character: %c\n", expression[i]);
+            return 0;
+        }
+    }
+
+    for (i = 0; i < opIndex; i++) {
+        if (operators[i] == '*' || operators[i] == '/') {
+            numbers[i] = applyOperation(numbers[i], numbers[i + 1], operators[i]);
+            for (int j = i + 1; j < numIndex - 1; j++) {
+                numbers[j] = numbers[j + 1];
+            }
+            for (int j = i; j < opIndex - 1; j++) {
+                operators[j] = operators[j + 1];
+            }
+            numIndex--;
+            opIndex--;
+            i--;
+        }
+    }
+
+    for (i = 0; i < opIndex; i++) {
+        numbers[i] = applyOperation(numbers[i], numbers[i + 1], operators[i]);
+        for (int j = i + 1; j < numIndex - 1; j++) {
+            numbers[j] = numbers[j + 1];
+        }
+        numIndex--;
+    }
+
+    return numbers[0];
+}
+
+void applications() {
+   
+    char expression[100];
+    double result;
+
+    while (1) {
+
+        printf("Enter a calculation : ");
+        fgets(expression, sizeof(expression), stdin);
+
+        for (int i = 0; expression[i] != '\0'; i++) {
+            if (expression[i] == '\n') {
+                expression[i] = '\0';
+                break;
+            }
+        }
+
+        if (expression[0] == 'n' || expression[0] == 'N') {
+            printf(" Now returning to the menu...\n");
+            return;
+        }
+
+        else if (expression[0] == 'c' || expression[0] == 'C')
+            reset(); //restoring the memory
+
+        else if (is_selected) {
+            result = evaluateExpression((char*)mem_acces[currunt_mem]);
+
+             currunt_mem = 0;
+             is_selected = false;
+
+        }
+
+       
+
+        else {
+            result = evaluateExpression(expression);
+            printf("Result: %.2lf\n", result);
+            save((float)result);
+        }
+    }
+}
