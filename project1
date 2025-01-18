@@ -10,9 +10,6 @@
 #include<string.h>
 #include<ctype.h>
 
-char mem_acces[1000] = {0};
-int currunt_mem;                    //for accesing the memory units
-bool is_selected = false;
 
 void save(float n);
 void show(void);
@@ -64,12 +61,6 @@ void save(float n) {
     fprintf(fp, "%f\n", n);
     fclose(fp);
 
-    for (int i = 1; i < 1000; i++) {
-        if (mem_acces[i] == '0') {
-            mem_acces[i] = n;
-            break;
-        }
-    }
 }
 
 void show(void) {
@@ -85,13 +76,7 @@ void show(void) {
         printf("%f\n", n);
     fclose(fp);
 
-    printf(" Which line do you want to continue ? (Press '0' to exit to menu) \n");
-    scanf("%d", &currunt_mem);
-
-    if (currunt_mem != 0)
-        is_selected = true;
-
-    else return;
+   
 }
 
 void reset(void) {
@@ -101,8 +86,7 @@ void reset(void) {
     fclose(fp);
     printf("The history has been cleared\n");
 
-    for (int i = 1; i < 1000; i++)
-        mem_acces[i] = { 0 };
+    
 }
 
 double applyOperation(double a, double b, char op) {
@@ -116,8 +100,8 @@ double applyOperation(double a, double b, char op) {
 
 double evaluateExpression(const char* expression) {
   
-    double numbers[100];
-    char operators[100];
+    double numbers[100]; //saving numbers in each index
+    char operators[100]; //saving ops in indexes
     int numIndex = 0, opIndex = 0;
     int i = 0;
 
@@ -160,7 +144,7 @@ double evaluateExpression(const char* expression) {
 
     for (i = 0; i < opIndex; i++) {
         if (operators[i] == '*' || operators[i] == '/') {
-            numbers[i] = applyOperation(numbers[i], numbers[i + 1], operators[i]);
+            numbers[i] = applyOperation(numbers[i], numbers[i + 1], operators[i]);   //for what is left after primary ops
             for (int j = i + 1; j < numIndex - 1; j++) {
                 numbers[j] = numbers[j + 1];
             }
@@ -201,7 +185,7 @@ void applications() {
             }
         }
 
-        if (expression[0] == 'n' || expression[0] == 'N') {
+        if (expression[0] == 'n' || expression[0] == 'N') {  //Exit from loop
             printf(" Now returning to the menu...\n");
             return;
         }
@@ -209,15 +193,7 @@ void applications() {
         else if (expression[0] == 'c' || expression[0] == 'C')
             reset(); //restoring the memory
 
-        else if (is_selected) {
-            result = evaluateExpression((char*)mem_acces[currunt_mem]);
-
-             currunt_mem = 0;
-             is_selected = false;
-
-        }
-
-       
+        
 
         else {
             result = evaluateExpression(expression);
