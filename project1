@@ -51,10 +51,7 @@ int main() {
 void save(const char* operation, float result) {
     FILE* fp;
     fp = fopen("data_saver.txt", "a");
-    if (fp == NULL) {
-        printf("Error opening file.\n");
-        return;
-    }
+    if (fp == NULL) return;
     fprintf(fp, "%s = %.2f\n", operation, result);
     fclose(fp);
 }
@@ -62,13 +59,14 @@ void save(const char* operation, float result) {
 void show(void) {
     FILE* fp;
     char line[200];
+    int index = 1;
     fp = fopen("data_saver.txt", "r");
     if (fp == NULL) {
         printf("Nothing in history\n");
         return;
     }
     while (fgets(line, sizeof(line), fp) != NULL) {
-        printf("%s", line);
+        printf("#%d: %s", index++, line);
     }
     fclose(fp);
 }
@@ -166,7 +164,7 @@ void applications() {
     double result;
 
     while (1) {
-        printf("Enter a calculation : ");
+        printf("Enter a calculation: ");
         fgets(expression, sizeof(expression), stdin);
 
         for (int i = 0; expression[i] != '\0'; i++) {
@@ -181,10 +179,47 @@ void applications() {
             return;
         } else if (expression[0] == 'c' || expression[0] == 'C') {
             reset();
-        } else {
-            result = evaluateExpression(expression);
-            printf("Result: %.2lf\n", result);
-            save(expression, (float)result);
+        } else if (expression[0] == '#' || expression[strlen(expression) - 1] == '#') {
+            int index;
+            if (expression[0] == '#') {
+                sscanf(&expression[1], "%d", &index);
+            } else {
+                sscanf(expression, "%d#", &index);
+            }
+
+            FILE* fp = fopen("data_saver.txt", "r");
+            if (fp == NULL) {
+                printf("Nothing in history\n");
+                continue;
+            }
+
+            char line[200];
+            int currentIndex = 1;
+            int found = 0;
+
+            while (fgets(line, sizeof(line), fp) != NULL) {
+                if (currentIndex == index) {
+                    found = 1;
+                    char* equalSign = strchr(line, '=');
+                    if (equalSign != NULL) {
+                        equalSign[-1] = '\0';
+                        printf("Using history #%d: %s\n", index, line);
+                        strcpy(expression, line);
+                    }
+                    break;
+                }
+                currentIndex++;
+            }
+            fclose(fp);
+
+            if (!found) {
+                printf("Invalid history number!\n");
+                continue;
+            }
         }
+
+        result = evaluateExpression(expression);
+        printf("Result: %.2lf\n", result);
+        save(expression, (float)result);
     }
 }
