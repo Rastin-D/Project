@@ -1,4 +1,3 @@
-
 #define _CRT_SECURE_NO_WARNINGS
 
 #define pi 3.141592
@@ -11,7 +10,7 @@
 #include<string.h>
 #include<ctype.h>
 
-void save(float n);
+void save(const char* operation, float result);
 void show(void);
 void reset(void);
 double applyOperation(double, double, char);
@@ -19,12 +18,10 @@ double evaluateExpression(const char*);
 void applications(void);
 
 int main() {
-
     int choice;
     printf("Choose an option:\n1. Hints\n2. Calculator\n3. Show History\n4. Reset History\n5. Exit\n");
 
     while (1) {
-
         scanf("%d", &choice);
         getchar();
 
@@ -44,64 +41,56 @@ int main() {
         case 5:
             printf("Exiting...\n");
             exit(1);
-            break;
         default:
             printf("Invalid number!\n");
         }
-
     }
-
     return 0;
 }
 
-void save(float n) {
-
+void save(const char* operation, float result) {
     FILE* fp;
     fp = fopen("data_saver.txt", "a");
-    fprintf(fp, "%f\n", n);
+    if (fp == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+    fprintf(fp, "%s = %.2f\n", operation, result);
     fclose(fp);
-
 }
 
 void show(void) {
-
     FILE* fp;
-    float n;
+    char line[200];
     fp = fopen("data_saver.txt", "r");
     if (fp == NULL) {
         printf("Nothing in history\n");
         return;
     }
-    while (fscanf(fp, "%f", &n) != EOF)
-        printf("%f\n", n);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        printf("%s", line);
+    }
     fclose(fp);
-
-
 }
 
 void reset(void) {
-
     FILE* fp;
     fp = fopen("data_saver.txt", "w");
     fclose(fp);
     printf("The history has been cleared\n");
-
-
 }
 
 double applyOperation(double a, double b, char op) {
-
     if (op == '+') return a + b;
     if (op == '-') return a - b;
     if (op == '*') return a * b;
-    if (op == '/') return b != 0 ? a / b : 0;             //if smt was a/0 --> a/0 = 0
+    if (op == '/') return b != 0 ? a / b : 0;
     return 0;
 }
 
 double evaluateExpression(const char* expression) {
-
-    double numbers[100]; //saving numbers in each index
-    char operators[100]; //saving ops in indexes
+    double numbers[100];
+    char operators[100];
     int numIndex = 0, opIndex = 0;
     int i = 0;
 
@@ -110,11 +99,9 @@ double evaluateExpression(const char* expression) {
             i++;
             continue;
         }
-
         if (isdigit(expression[i]) || expression[i] == '.') {
             double value = 0;
             double fraction = 1;
-
             while (isdigit(expression[i]) || expression[i] == '.') {
                 if (expression[i] == '.') {
                     fraction = 0.1;
@@ -123,44 +110,36 @@ double evaluateExpression(const char* expression) {
                 }
                 if (fraction == 1) {
                     value = value * 10 + (expression[i] - '0');
-                }
-                else {
+                } else {
                     value += (expression[i] - '0') * fraction;
                     fraction *= 0.1;
                 }
                 i++;
             }
             numbers[numIndex++] = value;
-        }
-        else if (strncmp(&expression[i], "pi", 2) == 0) {
+        } else if (strncmp(&expression[i], "pi", 2) == 0) {
             numbers[numIndex++] = pi;
             i += 2;
-        }
-        else if (strncmp(&expression[i], "e", 1) == 0) {
+        } else if (strncmp(&expression[i], "e", 1) == 0) {
             numbers[numIndex++] = e;
             i += 1;
-        }
-        else if (expression[i] == '(') {
+        } else if (expression[i] == '(') {
             int start = ++i;
             int parenthesisCount = 1;
-
             while (parenthesisCount > 0 && expression[i] != '\0') {
                 if (expression[i] == '(') parenthesisCount++;
                 else if (expression[i] == ')') parenthesisCount--;
                 i++;
             }
-
             if (parenthesisCount != 0) {
                 printf("Unbalanced parentheses!\n");
                 return 0;
             }
-
             char subExpr[100];
             strncpy(subExpr, &expression[start], i - start - 1);
             subExpr[i - start - 1] = '\0';
             numbers[numIndex++] = evaluateExpression(subExpr);
-        }
-        else if (expression[i] == '+' || expression[i] == '-' || expression[i] == '*' || expression[i] == '/') {
+        } else if (expression[i] == '+' || expression[i] == '-' || expression[i] == '*' || expression[i] == '/') {
             while (opIndex > 0 && (
                 (operators[opIndex - 1] == '*' || operators[opIndex - 1] == '/') ||
                 ((operators[opIndex - 1] == '+' || operators[opIndex - 1] == '-') && (expression[i] == '+' || expression[i] == '-')))) {
@@ -169,8 +148,7 @@ double evaluateExpression(const char* expression) {
             }
             operators[opIndex++] = expression[i];
             i++;
-        }
-        else {
+        } else {
             printf("Invalid character: %c\n", expression[i]);
             return 0;
         }
@@ -180,17 +158,14 @@ double evaluateExpression(const char* expression) {
         numbers[numIndex - 2] = applyOperation(numbers[numIndex - 2], numbers[numIndex - 1], operators[--opIndex]);
         numIndex--;
     }
-
     return numbers[0];
 }
 
 void applications() {
-
     char expression[100];
     double result;
 
     while (1) {
-
         printf("Enter a calculation : ");
         fgets(expression, sizeof(expression), stdin);
 
@@ -201,20 +176,15 @@ void applications() {
             }
         }
 
-        if (expression[0] == 'n' || expression[0] == 'N') {  //Exit from loop
-            printf(" Now returning to the menu...\n");
+        if (expression[0] == 'n' || expression[0] == 'N') {
+            printf("Now returning to the menu...\n");
             return;
-        }
-
-        else if (expression[0] == 'c' || expression[0] == 'C')
-            reset(); //restoring the memory
-
-
-
-        else {
+        } else if (expression[0] == 'c' || expression[0] == 'C') {
+            reset();
+        } else {
             result = evaluateExpression(expression);
             printf("Result: %.2lf\n", result);
-            save((float)result);
+            save(expression, (float)result);
         }
     }
 }
