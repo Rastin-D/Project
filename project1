@@ -2,14 +2,14 @@
 
 #define pi 3.141592
 #define e 2.718281
-#define WIDTH 90
-#define HEIGHT 30
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<ctype.h>
-#include<math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 100
 
 void save(const char* operation, float result);
 void show(void);
@@ -18,28 +18,174 @@ double applyOperation(double, double, char);
 double evaluateExpression(char*);
 double fetchFromHistory(int index);
 void applications(void);
-void plotFunction(double (*func)(double), double xStart, double xEnd);
-void plotPowerFunction(double (*func)(double, double), double base, double xStart, double xEnd);
-double sampleFunction(double x);
-double cosineFunction(double x);
-double cotangentFunction(double x);
-double tangentFunction(double x);
-double arcsineFunction(double x);
-double arccosineFunction(double x);
-double arctangentFunction(double x);
-double acotFunction(double x);
-double sqrtFunction(double x);
-double powerFunction(double base, double exponent);
-double naturalLogFunction(double x);
-double expFunction(double x);
-double logFunction(double base, double x); // Added this line
-int chooseFunction();
-void executeFunction(int choice);
-void display_gh(void);
+
+// توابع ریاضیاتی و مثلثاتی
+double add(double a, double b) { return a + b; }
+double subtract(double a, double b) { return a - b; }
+double multiply(double a, double b) { return a * b; }
+double divide(double a, double b) {
+    if (b != 0) return a / b;
+    printf("Error: Division by zero is not allowed.\n");
+    return 0;
+}
+double sine(double x) { return sin(x); }
+double cosine(double x) { return cos(x); }
+double tangent(double x) { return tan(x); }
+double cotangent(double x) { return 1.0 / tan(x); }
+double logarithm(double x) { return log(x); }
+double power(double base, double exp) { return pow(base, exp); }
+double squareroot(double x) { return sqrt(x); }
+
+// توابع کمکی
+int precedence(char operator) {
+    if (operator == '+' || operator == '-') return 1;
+    if (operator == '*' || operator == '/') return 2;
+    if (operator == '^') return 3;
+    return 0;
+}
+
+double applyOperator(double a, double b, char operator) {
+    switch (operator) {
+        case '+': return add(a, b);
+        case '-': return subtract(a, b);
+        case '*': return multiply(a, b);
+        case '/': return divide(a, b);
+        case '^': return power(a, b);
+        default: return 0;
+    }
+}
+
+double applyFunction(double x, const char* func) {
+    if (strcmp(func, "sin") == 0) return sine(x);
+    if (strcmp(func, "cos") == 0) return cosine(x);
+    if (strcmp(func, "tan") == 0) return tangent(x);
+    if (strcmp(func, "cot") == 0) return cotangent(x);
+    if (strcmp(func, "log") == 0) return logarithm(x);
+    if (strcmp(func, "sqrt") == 0) return squareroot(x);
+    return 0;
+}
+
+// تابع برای ارزیابی عبارت
+double evaluateExpression(char* expression) {
+    double values[MAX]; // پشته مقادیر
+    char operators[MAX]; // پشته عملگرها
+    int valuesIndex = -1;
+    int operatorsIndex = -1;
+    char func[10];
+    int funcIndex = 0;
+
+    for (int i = 0; i < strlen(expression); i++) {
+        if (isdigit(expression[i])) {
+            double value = 0;
+            while (i < strlen(expression) && (isdigit(expression[i]) || expression[i] == '.')) {
+                if (expression[i] == '.') {
+                    i++;
+                    double decimal = 1;
+                    while (i < strlen(expression) && isdigit(expression[i])) {
+                        decimal /= 10;
+                        value += (expression[i] - '0') * decimal;
+                        i++;
+                    }
+                } else {
+                    value = (value * 10) + (expression[i] - '0');
+                    i++;
+                }
+            }
+            values[++valuesIndex] = value;
+            i--;
+        } else if (expression[i] == '(') {
+            if (funcIndex > 0) {
+                func[funcIndex] = '\0';
+                operators[++operatorsIndex] = '(';
+                values[++valuesIndex] = applyFunction(evaluateExpression(expression + i + 1), func);
+                while (expression[i] != ')') i++;
+                funcIndex = 0;
+            } else {
+                operators[++operatorsIndex] = expression[i];
+            }
+        } else if (expression[i] == ')') {
+            while (operatorsIndex != -1 && operators[operatorsIndex] != '(') {
+                double b = values[valuesIndex--];
+                double a = values[valuesIndex--];
+                char operator = operators[operatorsIndex--];
+                values[++valuesIndex] = applyOperator(a, b, operator);
+            }
+            operatorsIndex--; // حذف پرانتز باز
+        } else if (precedence(expression[i]) > 0) {
+            while (operatorsIndex != -1 && precedence(operators[operatorsIndex]) >= precedence(expression[i])) {
+                double b = values[valuesIndex--];
+                double a = values[valuesIndex--];
+                char operator = operators[operatorsIndex--];
+                values[++valuesIndex] = applyOperator(a, b, operator);
+            }
+            operators[++operatorsIndex] = expression[i];
+        } else if (isalpha(expression[i])) {
+            func[funcIndex++] = expression[i];
+        }
+    }
+
+    while (operatorsIndex != -1) {
+        double b = values[valuesIndex--];
+        double a = values[valuesIndex--];
+        char operator = operators[operatorsIndex--];
+        values[++valuesIndex] = applyOperator(a, b, operator);
+    }
+
+    return values[0];
+}
+
+void applications() {
+    char expression[100];
+    double result;
+
+    while (1) {
+        printf("Enter a calculation: ");
+        fgets(expression, sizeof(expression), stdin);
+
+        for (int i = 0; expression[i] != '\0'; i++) {
+            if (expression[i] == '\n') {
+                expression[i] = '\0';
+                break;
+            }
+        }
+
+        if (expression[0] == 'n' || expression[0] == 'N') {
+            printf("Now returning to the menu...\n");
+            return;
+        } else if (expression[0] == 'c' || expression[0] == 'C') {
+            reset();
+        } else {
+            char* hashPos = strchr(expression, '#');
+            while (hashPos != NULL) {
+                int index;
+                sscanf(hashPos + 1, "%d", &index);
+                double historyValue = fetchFromHistory(index);
+
+                // Find the position after the number in the expression
+                char* restOfExpression = hashPos + 1;
+                while (isdigit(*restOfExpression)) restOfExpression++;
+
+                // Create a temporary buffer to hold the new expression
+                char tempExpression[100];
+                snprintf(tempExpression, sizeof(tempExpression), "%.2f%s", historyValue, restOfExpression);
+
+                // Copy the temporary buffer back to the original expression
+                strcpy(hashPos, tempExpression);
+
+                // Find the next occurrence of '#'
+                hashPos = strchr(hashPos + 1, '#');
+            }
+        }
+
+        result = evaluateExpression(expression);
+        printf("Result: %.2lf\n", result);
+        save(expression, (float)result);
+    }
+}
 
 int main() {
     int choice;
-    printf("Choose an option:\n1. Hints\n2. Calculator\n3. Show History\n4. Reset History\n5. Exit\n6. Graphs\n");
+    printf("Choose an option:\n1. Hints\n2. Calculator\n3. Show History\n4. Reset History\n5. Exit\n");
 
     while (1) {
         scanf("%d", &choice);
@@ -61,9 +207,6 @@ int main() {
         case 5:
             printf("Exiting...\n");
             exit(1);
-        case 6:
-            display_gh();
-            break;
         default:
             printf("Invalid number!\n");
         }
@@ -125,395 +268,4 @@ double fetchFromHistory(int index) {
     fclose(fp);
     printf("Invalid history number!\n");
     return 0;
-}
-
-double applyOperation(double a, double b, char op) {
-    if (op == '+') return a + b;
-    if (op == '-') return a - b;
-    if (op == '*') return a * b;
-    if (op == '/') return b != 0 ? a / b : 0;
-    return 0;
-}
-
-double evaluateExpression(char* expression) {
-    double numbers[100];
-    char operators[100];
-    int numIndex = 0, opIndex = 0;
-    int i = 0;
-
-    while (expression[i] != '\0') {
-        if (isspace(expression[i])) {
-            i++;
-            continue;
-        }
-        if (isdigit(expression[i]) || expression[i] == '.') {
-            double value = 0;
-            double fraction = 1;
-            while (isdigit(expression[i]) || expression[i] == '.') {
-                if (expression[i] == '.') {
-                    fraction = 0.1;
-                    i++;
-                    continue;
-                }
-                if (fraction == 1) {
-                    value = value * 10 + (expression[i] - '0');
-                }
-                else {
-                    value += (expression[i] - '0') * fraction;
-                    fraction *= 0.1;
-                }
-                i++;
-            }
-            numbers[numIndex++] = value;
-        }
-        else if (strncmp(&expression[i], "pi", 2) == 0) {
-            numbers[numIndex++] = pi;
-            i += 2;
-        }
-        else if (strncmp(&expression[i], "e", 1) == 0) {
-            numbers[numIndex++] = e;
-            i += 1;
-        }
-        else if (expression[i] == '(') {
-            int start = ++i;
-            int parenthesisCount = 1;
-            while (parenthesisCount > 0 && expression[i] != '\0') {
-                if (expression[i] == '(') parenthesisCount++;
-                else if (expression[i] == ')') parenthesisCount--;
-                i++;
-            }
-            if (parenthesisCount != 0) {
-                printf("Unbalanced parentheses!\n");
-                return 0;
-            }
-            char subExpr[100];
-            strncpy(subExpr, &expression[start], i - start - 1);
-            subExpr[i - start - 1] = '\0';
-            numbers[numIndex++] = evaluateExpression(subExpr);
-        }
-        else if (expression[i] == '+' || expression[i] == '-' || expression[i] == '*' || expression[i] == '/') {
-            while (opIndex > 0 && (
-                (operators[opIndex - 1] == '*' || operators[opIndex - 1] == '/') ||
-                ((operators[opIndex - 1] == '+' || operators[opIndex - 1] == '-') && (expression[i] == '+' || expression[i] == '-')))) {
-                numbers[numIndex - 2] = applyOperation(numbers[numIndex - 2], numbers[numIndex - 1], operators[--opIndex]);
-                numIndex--;
-            }
-            operators[opIndex++] = expression[i];
-            i++;
-        }
-        else {
-            printf("Invalid character: %c\n", expression[i]);
-            return 0;
-        }
-    }
-
-    while (opIndex > 0) {
-        numbers[numIndex - 2] = applyOperation(numbers[numIndex - 2], numbers[numIndex - 1], operators[--opIndex]);
-        numIndex--;
-    }
-    return numbers[0];
-}
-
-void applications() {
-    char expression[100];
-    double result;
-
-    while (1) {
-        printf("Enter a calculation: ");
-        fgets(expression, sizeof(expression), stdin);
-
-        for (int i = 0; expression[i] != '\0'; i++) {
-            if (expression[i] == '\n') {
-                expression[i] = '\0';
-                break;
-            }
-        }
-
-        if (expression[0] == 'n' || expression[0] == 'N') {
-            printf("Now returning to the menu...\n");
-            return;
-        }
-        else if (expression[0] == 'c' || expression[0] == 'C') {
-            reset();
-        }
-        else {
-            char* hashPos = strchr(expression, '#');
-            while (hashPos != NULL) {
-                int index;
-                sscanf(hashPos + 1, "%d", &index);
-                double historyValue = fetchFromHistory(index);
-
-                // Find the position after the number in the expression
-                char* restOfExpression = hashPos + 1;
-                while (isdigit(*restOfExpression)) restOfExpression++;
-
-                // Create a temporary buffer to hold the new expression
-                char tempExpression[100];
-                snprintf(tempExpression, sizeof(tempExpression), "%.2f%s", historyValue, restOfExpression);
-
-                // Copy the temporary buffer back to the original expression
-                strcpy(hashPos, tempExpression);
-
-                // Find the next occurrence of '#'
-                hashPos = strchr(hashPos + 1, '#');
-            }
-        }
-
-        result = evaluateExpression(expression);
-        printf("Result: %.2lf\n", result);
-        save(expression, (float)result);
-    }
-}
-int chooseFunction() {
-    int choice;
-    printf("Choose a function to plot:\n");
-    printf("1. Sine function\n");
-    printf("2. Cosine function\n");
-    printf("3. Cotangent function\n");
-    printf("4. Tangent function\n");
-    printf("5. Arcsine function\n");
-    printf("6. Arccosine function\n");
-    printf("7. Arctangent function\n");
-    printf("8. Acot function\n");
-    printf("9. Power function\n");
-    printf("10. Square root function\n");
-    printf("11. Natural logarithm function\n");
-    printf("12. Exponential function\n");
-    printf("13. Logarithm function\n"); // Added this line
-    printf("Enter your choice (1-13): ");
-    scanf("%d", &choice);
-    return choice;
-}
-
-// Function to execute the user's choice
-void executeFunction(int choice) {
-    double xStart, xEnd, base;
-    double (*func)(double) = NULL;
-
-    switch (choice) {
-    case 1:
-        func = sampleFunction;
-        break;
-    case 2:
-        func = cosineFunction;
-        break;
-    case 3:
-        func = cotangentFunction;
-        break;
-    case 4:
-        func = tangentFunction;
-        break;
-    case 5:
-        func = arcsineFunction;
-        break;
-    case 6:
-        func = arccosineFunction;
-        break;
-    case 7:
-        func = arctangentFunction;
-        break;
-    case 8:
-        func = acotFunction;
-        break;
-    case 9:
-        printf("please enter the base: ");
-        scanf("%lf", &base);
-        printf("please enter X1: ");
-        scanf("%lf", &xStart);
-        printf("please enter X2: ");
-        scanf("%lf", &xEnd);
-        plotPowerFunction(powerFunction, base, xStart, xEnd);
-        return;
-    case 10:
-        do {
-            printf("please enter X1:");
-            scanf("%lf", &xStart);
-            if (xStart < 0) {
-                printf("Negative domain is not acceptable.\n");
-            }
-        } while (xStart < 0);
-
-        do {
-            printf("please enter X2:");
-            scanf("%lf", &xEnd);
-            if (xEnd < 0) {
-                printf("Negative domain is not acceptable.\n");
-            }
-        } while (xEnd < 0);
-
-        plotFunction(sqrtFunction, xStart, xEnd);
-        return;
-    case 11:
-        func = naturalLogFunction;
-        break;
-    case 12:
-        func = expFunction;
-        break;
-    case 13: // Added this block
-        printf("please enter the base of log: ");
-        scanf("%lf", &base);
-        do {
-            printf("please enter X1:");
-            scanf("%lf", &xStart);
-            if (xStart <= 0) {
-                printf("Negative domain is not acceptable.\n");
-            }
-        } while (xStart <= 0);
-
-        do {
-            printf("please enter X2:");
-            scanf("%lf", &xEnd);
-            if (xEnd <= 0) {
-                printf("Negative domain is not acceptable.\n");
-            }
-        } while (xEnd <= 0);
-
-        plotPowerFunction(logFunction, base, xStart, xEnd);
-        return;
-    default:
-        printf("Invalid choice.\n");
-        return;
-    }
-
-    printf("please enter X1: ");
-    scanf("%lf", &xStart);
-
-    printf("please enter X2: ");
-    scanf("%lf", &xEnd);
-
-    plotFunction(func, xStart, xEnd);
-}
-
-// Function definitions
-void plotFunction(double (*func)(double), double xStart, double xEnd) {
-    char plot[HEIGHT][WIDTH];
-    double xRange = xEnd - xStart;
-
-    // Initialize plot array with spaces and axes
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            plot[y][x] = ' ';
-            if (y == HEIGHT / 2) plot[y][x] = '-';
-            if (x == (int)((0 - xStart) / xRange * WIDTH)) plot[y][x] = '|'; // Adjust y-axis position
-        }
-    }
-
-    double xStep = xRange / (WIDTH - 1);
-    double yRange = 2.0; // Modify this if needed to change y-axis scale
-
-    for (int x = 0; x < WIDTH; x++) {
-        double xValue = xStart + x * xStep;
-        double yValue = func(xValue);
-
-        if (isinf(yValue) || isnan(yValue)) {
-            continue; // Skip infinities and NaNs
-        }
-
-        int y = HEIGHT / 2 - (int)((yValue / yRange) * (HEIGHT / 2));
-        if (y >= 0 && y < HEIGHT) {
-            plot[y][x] = '*';
-        }
-    }
-
-    // Print plot array
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            printf("%c", plot[y][x]);
-        }
-        printf("\n");
-    }
-}
-
-void plotPowerFunction(double (*func)(double, double), double base, double xStart, double xEnd) {
-    char plot[HEIGHT][WIDTH];
-    double xRange = xEnd - xStart;
-
-    // Initialize plot array with spaces and axes
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            plot[y][x] = ' ';
-            if (y == HEIGHT / 2) plot[y][x] = '-';
-            if (x == (int)((0 - xStart) / xRange * WIDTH)) plot[y][x] = '|'; // Adjust y-axis position
-        }
-    }
-
-    double xStep = xRange / (WIDTH - 1);
-    double yRange = 10.0; // Modify this if needed to change y-axis scale
-
-    for (int x = 0; x < WIDTH; x++) {
-        double xValue = xStart + x * xStep;
-        double yValue = func(base, xValue);
-
-        int y = HEIGHT / 2 - (int)((yValue / yRange) * (HEIGHT / 2));
-        if (y >= 0 && y < HEIGHT) {
-            plot[y][x] = '*';
-        }
-    }
-
-    // Print plot array
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            printf("%c", plot[y][x]);
-        }
-        printf("\n");
-    }
-}
-
-void display_gh(void) {
-
-    int choice = chooseFunction();
-    executeFunction(choice);
-
-}
-
-double sampleFunction(double x) {
-    return sin(x);
-}
-
-double cosineFunction(double x) {
-    return cos(x);
-}
-
-double cotangentFunction(double x) {
-    return 1.0 / tan(x);
-}
-
-double tangentFunction(double x) {
-    return tan(x);
-}
-
-double arcsineFunction(double x) {
-    return asin(x);
-}
-
-double arccosineFunction(double x) {
-    return acos(x);
-}
-
-double arctangentFunction(double x) {
-    return atan(x);
-}
-
-double acotFunction(double x) {
-    return atan(1.0 / x);
-}
-
-double powerFunction(double base, double exponent) {
-    return pow(base, exponent);
-}
-
-double sqrtFunction(double x) {
-    return sqrt(x);
-}
-
-double naturalLogFunction(double x) {
-    return log(x);
-}
-
-double expFunction(double x) {
-    return exp(x);
-}
-
-double logFunction(double base, double x) { // Added this function
-    return log(x) / log(base);
 }
