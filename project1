@@ -5,8 +5,6 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include<math.h>
-#include<conio.h>
 #include<string.h>
 #include<ctype.h>
 
@@ -14,7 +12,8 @@ void save(const char* operation, float result);
 void show(void);
 void reset(void);
 double applyOperation(double, double, char);
-double evaluateExpression(const char*);
+double evaluateExpression(char*);
+double fetchFromHistory(int index);
 void applications(void);
 
 int main() {
@@ -49,33 +48,59 @@ int main() {
 }
 
 void save(const char* operation, float result) {
-    FILE* fp;
-    fp = fopen("data_saver.txt", "a");
+    FILE* fp = fopen("data_saver.txt", "a");
     if (fp == NULL) return;
     fprintf(fp, "%s = %.2f\n", operation, result);
     fclose(fp);
 }
 
 void show(void) {
-    FILE* fp;
+    FILE* fp = fopen("data_saver.txt", "r");
     char line[200];
     int index = 1;
-    fp = fopen("data_saver.txt", "r");
+
     if (fp == NULL) {
         printf("Nothing in history\n");
         return;
     }
+
     while (fgets(line, sizeof(line), fp) != NULL) {
         printf("#%d: %s", index++, line);
     }
+
     fclose(fp);
 }
 
 void reset(void) {
-    FILE* fp;
-    fp = fopen("data_saver.txt", "w");
+    FILE* fp = fopen("data_saver.txt", "w");
     fclose(fp);
     printf("The history has been cleared\n");
+}
+
+double fetchFromHistory(int index) {
+    FILE* fp = fopen("data_saver.txt", "r");
+    char line[200];
+    int currentIndex = 1;
+
+    if (fp == NULL) {
+        printf("History is empty.\n");
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (currentIndex == index) {
+            char* equalSign = strchr(line, '=');
+            if (equalSign != NULL) {
+                fclose(fp);
+                return atof(equalSign + 2); // Extract the value after '='
+            }
+        }
+        currentIndex++;
+    }
+
+    fclose(fp);
+    printf("Invalid history number!\n");
+    return 0;
 }
 
 double applyOperation(double a, double b, char op) {
@@ -86,7 +111,7 @@ double applyOperation(double a, double b, char op) {
     return 0;
 }
 
-double evaluateExpression(const char* expression) {
+double evaluateExpression(char* expression) {
     double numbers[100];
     char operators[100];
     int numIndex = 0, opIndex = 0;
@@ -179,42 +204,26 @@ void applications() {
             return;
         } else if (expression[0] == 'c' || expression[0] == 'C') {
             reset();
-        } else if (expression[0] == '#' || expression[strlen(expression) - 1] == '#') {
-            int index;
-            if (expression[0] == '#') {
-                sscanf(&expression[1], "%d", &index);
-            } else {
-                sscanf(expression, "%d#", &index);
-            }
+        } else {
+            char* hashPos = strchr(expression, '#');
+            while (hashPos != NULL) {
+                int index;
+                sscanf(hashPos + 1, "%d", &index);
+                double historyValue = fetchFromHistory(index);
 
-            FILE* fp = fopen("data_saver.txt", "r");
-            if (fp == NULL) {
-                printf("Nothing in history\n");
-                continue;
-            }
+                // Find the position after the number in the expression
+                char* restOfExpression = hashPos + 1;
+                while (isdigit(*restOfExpression)) restOfExpression++;
 
-            char line[200];
-            int currentIndex = 1;
-            int found = 0;
+                // Create a temporary buffer to hold the new expression
+                char tempExpression[100];
+                snprintf(tempExpression, sizeof(tempExpression), "%.2f%s", historyValue, restOfExpression);
 
-            while (fgets(line, sizeof(line), fp) != NULL) {
-                if (currentIndex == index) {
-                    found = 1;
-                    char* equalSign = strchr(line, '=');
-                    if (equalSign != NULL) {
-                        equalSign[-1] = '\0';
-                        printf("Using history #%d: %s\n", index, line);
-                        strcpy(expression, line);
-                    }
-                    break;
-                }
-                currentIndex++;
-            }
-            fclose(fp);
+                // Copy the temporary buffer back to the original expression
+                strcpy(hashPos, tempExpression);
 
-            if (!found) {
-                printf("Invalid history number!\n");
-                continue;
+                // Find the next occurrence of '#'
+                hashPos = strchr(hashPos + 1, '#');
             }
         }
 
