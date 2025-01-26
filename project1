@@ -134,7 +134,6 @@ double applyOperation(double a, double b, char op) {
     if (op == '/') return b != 0 ? a / b : 0;
     return 0;
 }
-
 double evaluateExpression(char* expression) {
     double numbers[100];
     char operators[100];
@@ -174,6 +173,160 @@ double evaluateExpression(char* expression) {
             numbers[numIndex++] = e;
             i += 1;
         }
+        else if (strncmp(&expression[i], "sin", 3) == 0) {
+            i += 4; // Skip "sin("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = sin(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "cos", 3) == 0) {
+            i += 4; // Skip "cos("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = cos(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "tan", 3) == 0) {
+            i += 4; // Skip "tan("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = tan(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "cot", 3) == 0) {
+            i += 4; // Skip "cot("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = 1.0 / tan(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "log", 3) == 0) {
+            i += 4; // Skip "log("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = log(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "abs", 3) == 0) {
+            i += 4; // Skip "abs("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = fabs(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "sqrt", 4) == 0) {
+            i += 5; // Skip "sqrt("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = sqrt(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "arcsin", 6) == 0) {
+            i += 7; // Skip "arcsin("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = asin(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "arccos", 6) == 0) {
+            i += 7; // Skip "arccos("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = acos(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "arctan", 6) == 0) {
+            i += 7; // Skip "arctan("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = atan(evaluateExpression(subExpr));
+        }
+        else if (strncmp(&expression[i], "arccot", 6) == 0) {
+            i += 7; // Skip "arccot("
+            char subExpr[100];
+            int start = i;
+            int parenthesisCount = 1;
+            while (parenthesisCount > 0 && expression[i] != '\0') {
+                if (expression[i] == '(') parenthesisCount++;
+                else if (expression[i] == ')') parenthesisCount--;
+                i++;
+            }
+            strncpy(subExpr, &expression[start], i - start - 1);
+            subExpr[i - start - 1] = '\0';
+            numbers[numIndex++] = atan(1.0 / evaluateExpression(subExpr));
+        }
         else if (expression[i] == '(') {
             int start = ++i;
             int parenthesisCount = 1;
@@ -200,8 +353,7 @@ double evaluateExpression(char* expression) {
             }
             operators[opIndex++] = expression[i];
             i++;
-        }
-        else {
+        } else {
             printf("Invalid character: %c\n", expression[i]);
             return 0;
         }
